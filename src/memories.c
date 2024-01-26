@@ -103,7 +103,7 @@ int main(void) {
 	  fputs("memories (info): quit    gracefully quits memories\n", stderr);
 	  fputs("memories (info): unread    shows the number of unread atname instances\n", stderr);
 	  fputs("memories (info): read    resets the atname instance count\n", stderr);
-	  fputs("memories (info): pause    waits until a message can  be read from the input device; the message is then sent to the server\n", stderr);
+	  fputs("memories (info): pause    waits until a message can be read from the input device; the message is then sent to the server\n", stderr);
 	}
 	else if (strcmp((char *) recbuf, "/license") == 0) {
 	  fputs("memories (info): Copyright (c) 2024 Somdipto Chakraborty, licensed under the GNU General Public Licence v3.0\n", stderr);

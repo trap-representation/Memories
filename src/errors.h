@@ -1,0 +1,18 @@
+#ifndef ERRORS_H
+#define ERRORS_H
+
+enum error {
+  ERR_SUCCESS,
+  ERR_MALLOC,
+  ERR_SOCKET,
+  ERR_GETADDRINFO,
+  ERR_WRITE,
+  ERR_SELECT,
+  ERR_READ,
+  ERR_FGETS,
+  ERR_FWRITE,
+  ERR_TIME,
+  ERR_GETCHAR
+};
+
+#endif

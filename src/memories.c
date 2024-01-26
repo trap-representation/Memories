@@ -74,8 +74,8 @@ int main(void) {
       int sr = select(sd + 1, &rset, NULL, NULL, &timeout);
 
       if (sr == -1) {
-	free(recbuf);
 	close(sd);
+	free(recbuf);
 	free_bufs(nickname, password, user, host, serv);
 	return ERR_SELECT;
       }
@@ -83,18 +83,20 @@ int main(void) {
 	if (difftime(time(NULL), lrectime) >= RECONNECT_TIME) {
 	  fputs("memories (info): reconnecting (timed out)\n", stderr);
 
+	  close(sd);
+
 	  struct timespec slp;
 	  slp.tv_sec = 5;
 	  slp.tv_nsec = 0;
-
 	  thrd_sleep(&slp, NULL);
+
 	  break;
 	}
       }
       else if (FD_ISSET(0, &rset)) {
 	if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_FGETS;
 	}
@@ -108,14 +110,21 @@ int main(void) {
 	  fputs("memories (info): quit    gracefully quits memories\n", stderr);
 	  fputs("memories (info): unread    shows the number of unread atname instances\n", stderr);
 	  fputs("memories (info): read    resets the atname instance count\n", stderr);
-	  fputs("memories (info): pause    waits until a message can be read from the input device; the message is then sent to the server\n", stderr);
+	  fputs("memories (info): hold    waits until a message can be read from the input device; the message is then sent to the server\n", stderr);
 	}
 	else if (strcmp((char *) recbuf, "/license") == 0) {
 	  fputs("memories (info): Copyright (c) 2024 Somdipto Chakraborty, licensed under the GNU General Public Licence v3.0\n", stderr);
-	  break;
 	}
 	else if (strcmp((char *) recbuf, "/reconnect") == 0) {
 	  fputs("memories (info): reconnecting (forced)\n", stderr);
+
+	  close(sd);
+
+	  struct timespec slp;
+	  slp.tv_sec = 5;
+	  slp.tv_nsec = 0;
+	  thrd_sleep(&slp, NULL);
+
 	  break;
 	}
 	else if (strcmp((char *) recbuf, "/quit") == 0) {
@@ -132,17 +141,17 @@ int main(void) {
 	  atnamesi = 0;
 	}
 	else {
-	  if (strcmp((char *) recbuf, "/pause") == 0) {
-	    fputs("memories (info): paused\n", stderr);
+	  if (strcmp((char *) recbuf, "/hold") == 0) {
+	    fputs("memories (info): held\n", stderr);
 
 	    if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
-	      free(recbuf);
 	      close(sd);
+	      free(recbuf);
 	      free_bufs(nickname, password, user, host, serv);
 	      return ERR_FGETS;
 	    }
 
-	    fputs("memories (info): unpaused\n", stderr);
+	    fputs("memories (info): unheld\n", stderr);
 	  }
 
 	  for (size_t i = 0; recbuf[i] != '\0'; i++) {
@@ -167,8 +176,8 @@ int main(void) {
 
 	    int d;
 	    if ((d = getchar()) == EOF) {
-	      free(recbuf);
 	      close(sd);
+	      free(recbuf);
 	      free_bufs(nickname, password, user, host, serv);
 	      return ERR_GETCHAR;
 	    }
@@ -176,23 +185,23 @@ int main(void) {
 	      fputs("memories (info): sending message\n", stderr);
 
 	      if (write(sd, recbuf, strlen((char *) recbuf)) == -1) {
-		free(recbuf);
 		close(sd);
+		free(recbuf);
 		free_bufs(nickname, password, user, host, serv);
 		return ERR_WRITE;
 	      }
 
 	      if (write(sd, ASCII_CR_S ASCII_LF_S, 2) == -1) {
-		free(recbuf);
 		close(sd);
+		free(recbuf);
 		free_bufs(nickname, password, user, host, serv);
 		return ERR_WRITE;
 	      }
 	    }
 	    else {
 	      if (getchar() == EOF) {
-		free(recbuf);
 		close(sd);
+		free(recbuf);
 		free_bufs(nickname, password, user, host, serv);
 		return ERR_GETCHAR;
 	      }
@@ -203,8 +212,8 @@ int main(void) {
 	}
 
 	if ((lrectime = time(NULL)) == -1) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_TIME;
 	}
@@ -212,29 +221,29 @@ int main(void) {
       else if (FD_ISSET(sd, &rset)) {
 	ssize_t rsize;
 	if ((rsize = read(sd, recbuf, MAX_RECV_LEN)) == -1) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_READ;
 	}
 
 	if (fwrite(recbuf, 1, rsize, stderr) < (unsigned long) rsize) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_FWRITE;
 	}
 
 	if ((rerr = check(recbuf, rsize, nickname, &atnamesi, sd)) != ERR_SUCCESS) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return rerr;
 	}
 
 	if ((lrectime = time(NULL)) == -1) {
-	  free(recbuf);
 	  close(sd);
+	  free(recbuf);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_TIME;
 	}

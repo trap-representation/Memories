@@ -124,7 +124,7 @@ enum error establish_connection(uint8_t *host, uint8_t *serv, int *sd) {
 
   memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
   hints.ai_protocol = 0;

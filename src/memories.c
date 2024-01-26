@@ -7,6 +7,7 @@
 #include <sys/select.h>
 #include <time.h>
 #include <string.h>
+#include <threads.h>
 
 #include "utils.h"
 #include "config.h"
@@ -83,17 +84,16 @@ int main(void) {
       else if (sr == 0) {
 	if (difftime(time(NULL), lrectime) >= RECONNECT_TIME) {
 	  fputs("memories (info): reconnecting (timed out)\n", stderr);
+
+	  struct timespec slp;
+	  slp.tv_sec = 5;
+	  slp.tv_nsec = 0;
+
+	  thrd_sleep(&slp, NULL);
 	  break;
 	}
       }
       else if (FD_ISSET(0, &rset)) {
-	if ((lrectime = time(NULL)) == -1) {
-	  free(recbuf);
-	  close(sd);
-	  free_bufs(nickname, password, user, host, serv);
-	  return ERR_TIME;
-	}
-
 	if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
 	  free(recbuf);
 	  close(sd);
@@ -199,15 +199,15 @@ int main(void) {
 	    }
 	  }
 	}
-      }
-      else if (FD_ISSET(sd, &rset)) {
+
 	if ((lrectime = time(NULL)) == -1) {
 	  free(recbuf);
 	  close(sd);
 	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_TIME;
 	}
-
+      }
+      else if (FD_ISSET(sd, &rset)) {
 	ssize_t rsize;
 	if ((rsize = read(sd, recbuf, MAX_RECV_LEN)) == -1) {
 	  free(recbuf);
@@ -228,6 +228,13 @@ int main(void) {
 	  close(sd);
 	  free_bufs(nickname, password, user, host, serv);
 	  return rerr;
+	}
+
+	if ((lrectime = time(NULL)) == -1) {
+	  free(recbuf);
+	  close(sd);
+	  free_bufs(nickname, password, user, host, serv);
+	  return ERR_TIME;
 	}
       }
     }

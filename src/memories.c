@@ -11,9 +11,7 @@
 
 #include "utils.h"
 #include "config.h"
-
-#define ASCII_CR_S "\x0d"
-#define ASCII_LF_S "\x0a"
+#include "hcchars.h"
 
 #define MAX_RECV_LEN 512
 
@@ -148,17 +146,17 @@ int main(void) {
 	  }
 
 	  for (size_t i = 0; recbuf[i] != '\0'; i++) {
-	    if (recbuf[i] == '\n') {
+	    if (recbuf[i] == ASCII_LF) {
 	      recbuf[i] = '\0';
 	      break;
 	    }
-	    else if (recbuf[i] == '\r') {
-	      fputs("memories (info): message with carriage return truncated\n", stderr);
+	    else if (recbuf[i] == ASCII_CR) {
+	      fprintf(stderr, "memories (info): message with %hhx byte truncated\n", (unsigned char) ASCII_CR);
 	      recbuf[i] = '\0';
 	      break;
 	    }
 	    else if (recbuf[i] == '\0') {
-	      fputs("memories (info): message with null truncated\n", stderr);
+	      fputs("memories (info): message with 0 byte truncated\n", stderr);
 	      recbuf[i] = '\0';
 	      break;
 	    }
@@ -175,6 +173,8 @@ int main(void) {
 	      return ERR_GETCHAR;
 	    }
 	    else if (d == '\n') {
+	      fputs("memories (info): sending message\n", stderr);
+
 	      if (write(sd, recbuf, strlen((char *) recbuf)) == -1) {
 		free(recbuf);
 		close(sd);
@@ -196,6 +196,8 @@ int main(void) {
 		free_bufs(nickname, password, user, host, serv);
 		return ERR_GETCHAR;
 	      }
+
+	      fputs("memories (info): message not sent\n", stderr);
 	    }
 	  }
 	}

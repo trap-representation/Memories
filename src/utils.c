@@ -9,13 +9,7 @@
 #include <stdlib.h>
 
 #include "utils.h"
-
-#define ASCII_SPACE 0x20
-#define ASCII_COLON 0x3b
-#define ASCII_CR 0x0d
-#define ASCII_LF 0x0a
-#define ASCII_CR_S "\x0d"
-#define ASCII_LF_S "\x0a"
+#include "hcchars.h"
 
 #define MAX_MSG_LEN 512
 
@@ -72,17 +66,17 @@ static enum error add_detail(uint8_t *d, size_t dsize, char *ddiag) {
     }
 
     for (size_t i = 0; d[i] != '\0'; i++) {
-      if (d[i] == '\n') {
+      if (d[i] == ASCII_LF) {
 	d[i] = '\0';
 	break;
       }
-      else if (d[i] == '\r') {
-	fputs("memories (info): message with carriage return truncated\n", stderr);
+      else if (d[i] == ASCII_CR) {
+	fprintf(stderr, "memories (info): message with %hhx byte truncated\n", (unsigned char) ASCII_CR);
 	d[i] = '\0';
 	break;
       }
       else if (d[i] == '\0') {
-	fputs("memories (info): message with null truncated\n", stderr);
+	fputs("memories (info): message with 0 byte truncated\n", stderr);
 	d[i] = '\0';
 	break;
       }
@@ -220,15 +214,17 @@ enum error check(uint8_t *recbuf, ssize_t rsize, uint8_t *nickname, uintmax_t *a
     }
     else{
       if (recbuf[i] != nickname[as]) {
-	as = -1;
-      }
-      else {
-	as++;
-	if (nickname[as] == '\0') {
+	if (nickname[as] == '\0' && (recbuf[i] == ASCII_SPACE || recbuf[i] == ASCII_CR)) {
 	  fputc('\a', stderr);
 	  as = -1;
 	  (*atnamesi)++;
 	}
+	else {
+	  as = -1;
+	}
+      }
+      else {
+	as++;
       }
     }
     switch(ps) {

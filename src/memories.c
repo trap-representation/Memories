@@ -17,21 +17,21 @@
 #define MAX_RECV_LEN 512
 
 int main(void) {
-  uint8_t *nickname = NULL, *password = NULL, *user = NULL, *host = NULL, *port = NULL;
+  uint8_t *nickname = NULL, *password = NULL, *user = NULL, *host = NULL, *serv = NULL;
   enum error rerr;
 
-  if ((rerr = alloc_bufs(&nickname, &password, &user, &host, &port)) != ERR_SUCCESS) {
+  if ((rerr = alloc_bufs(&nickname, &password, &user, &host, &serv)) != ERR_SUCCESS) {
     return rerr;
   }
 
-  if ((rerr = get_details(nickname, password, user, host, port)) != ERR_SUCCESS) {
-    free_bufs(nickname, password, user, host, port);
+  if ((rerr = get_details(nickname, password, user, host, serv)) != ERR_SUCCESS) {
+    free_bufs(nickname, password, user, host, serv);
     return rerr;
   }
 
   uint8_t *recbuf;
   if ((recbuf = malloc(MAX_RECV_LEN)) == NULL) {
-    free_bufs(nickname, password, user, host, port);
+    free_bufs(nickname, password, user, host, serv);
     return ERR_MALLOC;
   }
 
@@ -40,17 +40,17 @@ int main(void) {
   _Bool terminate = 0;
 
   while (!terminate) {
-    fprintf(stderr, "memories (info): establishing connection to %s:%s\n", (char *) host, (char *) port);
+    fprintf(stderr, "memories (info): establishing connection to %s:%s\n", (char *) host, (char *) serv);
 
     int sd;
-    if ((rerr = establish_connection(host, port, &sd)) != ERR_SUCCESS) {
-      free_bufs(nickname, password, user, host, port);
+    if ((rerr = establish_connection(host, serv, &sd)) != ERR_SUCCESS) {
+      free_bufs(nickname, password, user, host, serv);
       return rerr;
     }
 
     if ((rerr = send_details(nickname, password, user, sd)) != ERR_SUCCESS) {
       close(sd);
-      free_bufs(nickname, password, user, host, port);
+      free_bufs(nickname, password, user, host, serv);
       return rerr;
     }
 
@@ -58,7 +58,7 @@ int main(void) {
     if ((lrectime = time(NULL)) == -1) {
       free(recbuf);
       close(sd);
-      free_bufs(nickname, password, user, host, port);
+      free_bufs(nickname, password, user, host, serv);
       return ERR_TIME;
     }
 
@@ -77,7 +77,7 @@ int main(void) {
       if (sr == -1) {
 	free(recbuf);
 	close(sd);
-	free_bufs(nickname, password, user, host, port);
+	free_bufs(nickname, password, user, host, serv);
 	return ERR_SELECT;
       }
       else if (sr == 0) {
@@ -90,7 +90,7 @@ int main(void) {
 	if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
 	  free(recbuf);
 	  close(sd);
-	  free_bufs(nickname, password, user, host, port);
+	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_FGETS;
 	}
 
@@ -133,7 +133,7 @@ int main(void) {
 	    if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
 	      free(recbuf);
 	      close(sd);
-	      free_bufs(nickname, password, user, host, port);
+	      free_bufs(nickname, password, user, host, serv);
 	      return ERR_FGETS;
 	    }
 
@@ -164,21 +164,21 @@ int main(void) {
 	    if ((d = getchar()) == EOF) {
 	      free(recbuf);
 	      close(sd);
-	      free_bufs(nickname, password, user, host, port);
+	      free_bufs(nickname, password, user, host, serv);
 	      return ERR_GETCHAR;
 	    }
 	    else if (d == '\n') {
 	      if (write(sd, recbuf, strlen((char *) recbuf)) == -1) {
 		free(recbuf);
 		close(sd);
-		free_bufs(nickname, password, user, host, port);
+		free_bufs(nickname, password, user, host, serv);
 		return ERR_WRITE;
 	      }
 
 	      if (write(sd, ASCII_CR_S ASCII_LF_S, 2) == -1) {
 		free(recbuf);
 		close(sd);
-		free_bufs(nickname, password, user, host, port);
+		free_bufs(nickname, password, user, host, serv);
 		return ERR_WRITE;
 	      }
 	    }
@@ -186,7 +186,7 @@ int main(void) {
 	      if (getchar() == EOF) {
 		free(recbuf);
 		close(sd);
-		free_bufs(nickname, password, user, host, port);
+		free_bufs(nickname, password, user, host, serv);
 		return ERR_GETCHAR;
 	      }
 	    }
@@ -197,7 +197,7 @@ int main(void) {
 	if ((lrectime = time(NULL)) == -1) {
 	  free(recbuf);
 	  close(sd);
-	  free_bufs(nickname, password, user, host, port);
+	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_TIME;
 	}
 
@@ -205,21 +205,21 @@ int main(void) {
 	if ((rsize = read(sd, recbuf, MAX_RECV_LEN)) == -1) {
 	  free(recbuf);
 	  close(sd);
-	  free_bufs(nickname, password, user, host, port);
+	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_READ;
 	}
 
 	if (fwrite(recbuf, 1, rsize, stderr) < (unsigned long) rsize) {
 	  free(recbuf);
 	  close(sd);
-	  free_bufs(nickname, password, user, host, port);
+	  free_bufs(nickname, password, user, host, serv);
 	  return ERR_FWRITE;
 	}
 
 	if ((rerr = check(recbuf, rsize, nickname, &atnamesi, sd)) != ERR_SUCCESS) {
 	  free(recbuf);
 	  close(sd);
-	  free_bufs(nickname, password, user, host, port);
+	  free_bufs(nickname, password, user, host, serv);
 	  return rerr;
 	}
       }
@@ -227,7 +227,7 @@ int main(void) {
   }
 
   free(recbuf);
-  free_bufs(nickname, password, user, host, port);
+  free_bufs(nickname, password, user, host, serv);
 
   return ERR_SUCCESS;
 }

@@ -19,44 +19,44 @@
 
 #define MAX_MSG_LEN 512
 
-void free_bufs(uint8_t *nickname, uint8_t *password, uint8_t *user, uint8_t *host, uint8_t *port) {
+void free_bufs(uint8_t *nickname, uint8_t *password, uint8_t *user, uint8_t *host, uint8_t *serv) {
   free(nickname);
   free(password);
   free(user);
   free(host);
-  free(port);
+  free(serv);
 }
 
-enum error alloc_bufs(uint8_t **nickname, uint8_t **password, uint8_t **user, uint8_t **host, uint8_t **port) {
-  *nickname = NULL, *password = NULL, *user = NULL, *host = NULL, *port = NULL;
+enum error alloc_bufs(uint8_t **nickname, uint8_t **password, uint8_t **user, uint8_t **host, uint8_t **serv) {
+  *nickname = NULL, *password = NULL, *user = NULL, *host = NULL, *serv = NULL;
 
   if ((*nickname = malloc(MAX_MSG_LEN - 1)) == NULL) { /* one extra byte for the null character */
     fprintf(stderr, "memories (error): failed to allocate enough memory\n");
-    free_bufs(*nickname, *password, *user, *host, *port);
+    free_bufs(*nickname, *password, *user, *host, *serv);
     return ERR_MALLOC;
   }
 
   if ((*password = malloc(MAX_MSG_LEN - 1)) == NULL) {
     fprintf(stderr, "memories (error): failed to allocate enough memory\n");
-    free_bufs(*nickname, *password, *user, *host, *port);
+    free_bufs(*nickname, *password, *user, *host, *serv);
     return ERR_MALLOC;
   }
 
   if ((*user = malloc(MAX_MSG_LEN - 1)) == NULL) {
     fprintf(stderr, "memories (error): failed to allocate enough memory\n");
-    free_bufs(*nickname, *password, *user, *host, *port);
+    free_bufs(*nickname, *password, *user, *host, *serv);
     return ERR_MALLOC;
   }
 
   if ((*host = malloc(MAX_MSG_LEN + 1)) == NULL) {
     fprintf(stderr, "memories (error): failed to allocate enough memory\n");
-    free_bufs(*nickname, *password, *user, *host, *port);
+    free_bufs(*nickname, *password, *user, *host, *serv);
     return ERR_MALLOC;
   }
 
-  if ((*port = malloc(MAX_MSG_LEN + 1)) == NULL) {
+  if ((*serv = malloc(MAX_MSG_LEN + 1)) == NULL) {
     fprintf(stderr, "memories (error): failed to allocate enough memory\n");
-    free_bufs(*nickname, *password, *user, *host, *port);
+    free_bufs(*nickname, *password, *user, *host, *serv);
     return ERR_MALLOC;
   }
 
@@ -64,33 +64,41 @@ enum error alloc_bufs(uint8_t **nickname, uint8_t **password, uint8_t **user, ui
 }
 
 static enum error add_detail(uint8_t *d, size_t dsize, char *ddiag) {
-  fputs(ddiag, stderr);
+  while (1) {
+    fputs(ddiag, stderr);
 
-  if (fgets((char *) d, dsize + 1, stdin) == NULL) {
-    return ERR_FGETS;
-  }
+    if (fgets((char *) d, dsize + 1, stdin) == NULL) {
+      return ERR_FGETS;
+    }
 
-  for (size_t i = 0; d[i] != '\0'; i++) {
-    if (d[i] == '\n') {
-      d[i] = '\0';
+    for (size_t i = 0; d[i] != '\0'; i++) {
+      if (d[i] == '\n') {
+	d[i] = '\0';
+	break;
+      }
+      else if (d[i] == '\r') {
+	fputs("memories (info): message with carriage return truncated\n", stderr);
+	d[i] = '\0';
+	break;
+      }
+      else if (d[i] == '\0') {
+	fputs("memories (info): message with null truncated\n", stderr);
+	d[i] = '\0';
+	break;
+      }
+    }
+
+    if (d[0] != '\0') {
       break;
     }
-    else if (d[i] == '\r') {
-      fputs("memories (info): message with carriage return truncated\n", stderr);
-      d[i] = '\0';
-      break;
-    }
-    else if (d[i] == '\0') {
-      fputs("memories (info): message with null truncated\n", stderr);
-      d[i] = '\0';
-      break;
-    }
+
+    fputs("memories (info): detail cannot be empty\n", stderr);
   }
 
   return ERR_SUCCESS;
 }
 
-enum error get_details(uint8_t *nickname, uint8_t *password, uint8_t *user, uint8_t *host, uint8_t *port) {
+enum error get_details(uint8_t *nickname, uint8_t *password, uint8_t *user, uint8_t *host, uint8_t *serv) {
   enum error rerr;
 
   if ((rerr = add_detail(nickname, MAX_MSG_LEN - 2, "nickname\n")) != ERR_SUCCESS) {
@@ -109,14 +117,14 @@ enum error get_details(uint8_t *nickname, uint8_t *password, uint8_t *user, uint
     return rerr;
   }
 
-  if ((rerr = add_detail(port, MAX_MSG_LEN, "port\n")) != ERR_SUCCESS) {
+  if ((rerr = add_detail(serv, MAX_MSG_LEN, "service\n")) != ERR_SUCCESS) {
     return rerr;
   }
 
   return ERR_SUCCESS;
 }
 
-enum error establish_connection(uint8_t *host, uint8_t *port, int *sd) {
+enum error establish_connection(uint8_t *host, uint8_t *serv, int *sd) {
   *sd = -1;
   struct addrinfo hints, *result, *rp;
 
@@ -126,12 +134,12 @@ enum error establish_connection(uint8_t *host, uint8_t *port, int *sd) {
 
   memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_INET;
+  hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
   hints.ai_protocol = 0;
 
-  if (getaddrinfo((char *) host, (char *) port, &hints, &result) != 0) {
+  if (getaddrinfo((char *) host, (char *) serv, &hints, &result) != 0) {
     close(*sd);
     return ERR_GETADDRINFO;
   }

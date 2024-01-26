@@ -87,6 +87,13 @@ int main(void) {
 	}
       }
       else if (FD_ISSET(0, &rset)) {
+	if ((lrectime = time(NULL)) == -1) {
+	  free(recbuf);
+	  close(sd);
+	  free_bufs(nickname, password, user, host, serv);
+	  return ERR_TIME;
+	}
+
 	if (fgets((char *) recbuf, MAX_RECV_LEN - 1, stdin) == NULL) {
 	  free(recbuf);
 	  close(sd);

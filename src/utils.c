@@ -128,10 +128,6 @@ enum error establish_connection(uint8_t *host, uint8_t *serv, int *sd) {
   *sd = -1;
   struct addrinfo hints, *result, *rp;
 
-  if ((*sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    return ERR_SOCKET;
-  }
-
   memset(&hints, 0, sizeof(hints));
 
   hints.ai_family = AF_UNSPEC;
@@ -145,7 +141,10 @@ enum error establish_connection(uint8_t *host, uint8_t *serv, int *sd) {
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-    if (connect(*sd, rp->ai_addr, rp->ai_addrlen) != 1) {
+    if ((*sd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1) {
+      continue;
+    }
+    if (connect(*sd, rp->ai_addr, rp->ai_addrlen) == 0) {
       break;
     }
   }

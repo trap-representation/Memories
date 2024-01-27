@@ -16,6 +16,10 @@
 #define MAX_RECV_LEN 512
 
 int main(void) {
+  fputs("memories (info): this is memories; Carsee re-written in C11\n", stderr);
+  fputs("memories (info): my friend lost her plushie and we're trying to find it; if you come across it, it'd be great if you could let us know\n", stderr);
+  fputs("memories (info): for details on the plushie, please check out this post on reddit: https://www.reddit.com/r/indiasocial/comments/18xnn00/friend_lost_her_plushie\n", stderr);
+
   uint8_t *nickname = NULL, *password = NULL, *user = NULL, *host = NULL, *serv = NULL;
   enum error rerr;
 
